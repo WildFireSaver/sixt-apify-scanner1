@@ -1,18 +1,15 @@
 {
   "name": "sixt-deal-finder",
-  "version": "0.1.1",
-  "description": "Apify Actor: SIXT corporate rate finder using a saved session. No password, no CAPTCHA bypass, no auto-booking.",
+  "version": "0.1.0",
   "type": "module",
-  "engines": {
-    "node": ">=18"
-  },
+  "description": "SIXT corporate deal scanner for Apify",
   "scripts": {
-   "start": "node main.js"
+    "start": "node main.js",
     "capture-session": "node capture-session.js"
   },
   "dependencies": {
-    "apify": "^3.2.6",
-    "googleapis": "^144.0.0",
-    "playwright": "^1.47.0"
+    "apify": "^3.7.2",
+    "playwright": "npm:playwright-chromium@^1.60.0",
+    "googleapis": "^144.0.0"
   }
 }
