@@ -1,0 +1,15 @@
+UPLOAD THESE FILES/FOLDERS TO GITHUB ROOT:
+
+src
+tools
+.actor
+Dockerfile
+package.json
+README.md
+.gitignore
+.dockerignore
+
+IMPORTANT:
+Do NOT upload only the zip file.
+Do NOT leave main.js in the root.
+Apify needs src/main.js exactly.
