@@ -144,8 +144,8 @@
       "title": "SIXT base URL",
       "type": "string",
       "editor": "textfield",
-      "default": "https://www.sixt.com/",
-      "description": "Base SIXT website URL to open for login or scanning."
+      "default": "https://www.sixt.co.uk/",
+      "description": "Base SIXT website URL to open for login or scanning. Use https://www.sixt.co.uk/ for UK corporate login."
     },
     "searchUrlTemplate": {
       "title": "Search results URL template (recommended for cloud)",
@@ -209,6 +209,13 @@
       "default": {
         "useApifyProxy": true
       }
+    },
+    "baseUrl": {
+      "title": "Base URL alias",
+      "type": "string",
+      "editor": "textfield",
+      "default": "https://www.sixt.co.uk/",
+      "description": "Optional alias for SIXT base URL. Use https://www.sixt.co.uk/ for UK."
     }
   },
   "required": []

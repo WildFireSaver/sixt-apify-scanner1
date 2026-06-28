@@ -14,7 +14,7 @@ import { chromium } from 'playwright';
  * SIXT_SESSION. Your password is never typed or stored.
  */
 
-const BASE_URL = process.env.SIXT_BASE_URL || 'https://www.sixt.com/';
+const BASE_URL = process.env.SIXT_BASE_URL || 'https://www.sixt.co.uk/';
 const OUT = process.env.SESSION_OUT || './sixt-session.json';
 
 function waitForEnter(message) {

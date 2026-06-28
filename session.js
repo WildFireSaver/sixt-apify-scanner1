@@ -16,7 +16,7 @@ export function applyDefaults(input) {
   input.pickupTimes ||= ['10:00'];
   input.dateWindowStart ||= '2026-07-01';
   input.dateWindowEnd ||= '2026-07-31';
-  input.sixtBaseUrl ||= 'https://www.sixt.com/';
+  input.sixtBaseUrl ||= input.baseUrl || input.loginUrl || 'https://www.sixt.co.uk/';
   input.dateStepDays ??= 7;
   input.dayStep ??= 1;
   input.testRunOnly ??= true;
