@@ -1,133 +1,118 @@
-# SIXT Deal Finder — Apify Actor for v0/Supabase
+# SIXT Deal Scanner — Apify Actor (private) · v0.2
 
-This is the cloud scanner part. It runs on **Apify**, opens SIXT with Playwright, uses your saved corporate session, reads visible rental offers, and can send the results back to your **v0 app**.
+Two modes, both running **entirely in Apify** — no local Mac step needed:
 
-## Simple setup
+- **`save-session`** — opens SIXT in a real browser inside the run and exposes
+  it interactively through **Live View** so you log in by hand. After the time
+  window, it saves your session cookies to the Key-Value Store key
+  **`SIXT_SESSION`**.
+- **`scan`** — loads that session, scans the requested rates, saves to the
+  dataset, and POSTs to your v0 ingest endpoint.
 
-Use only:
+### Guardrails (enforced in code)
+- **No password** — you log in yourself; the actor only keeps the session cookies.
+- **No CAPTCHA / 2FA bypass** — you complete any challenge during `save-session`;
+  during `scan`, if a challenge appears the actor saves a screenshot and **stops**.
+- **No auto-booking** — only listings are read; a checkout-URL guard aborts.
+- **Slow & private** — randomized delays between searches; optional Live View
+  password.
 
-1. **v0** = app/dashboard + Supabase
-2. **Apify** = cloud scanner
-3. Optional: **Google Sheets** = backup export
+---
 
-## What this actor does
+## Mode 1 — `save-session` (interactive login, in cloud)
 
-- Opens SIXT in a cloud browser.
-- Uses a saved logged-in SIXT session/cookies.
-- Scans a test search first: LAX → LAX, 10:00 → 10:00, 5 days, SUV categories.
-- Extracts visible offer cards: category, example vehicle, price/day, total, rate type, booking link.
-- Saves results to the Apify dataset.
-- Optionally POSTs results to your v0 endpoint: `/api/ingest-deals`.
-- Optionally appends rows to Google Sheets.
+How it works: the run starts a headful Chromium on a virtual display, served to
+you over **noVNC** on the container's web port. You drive it from the Apify
+console.
 
-## Important truth about login
+Steps:
+1. Run the actor with input `{ "mode": "save-session", "liveViewMinutes": 10 }`
+   (optionally set `liveViewPassword`).
+2. Open the run's **Live View** tab in the Apify console (the log also prints a
+   direct `…/vnc.html` URL). If you set a password, noVNC will prompt for it.
+3. Log into your SIXT corporate account by hand — including 2FA/CAPTCHA.
+4. Stay logged in. When the window elapses, the actor writes `SIXT_SESSION` to
+   the Key-Value Store and reports success (cookie count).
 
-This scanner should **not** store your SIXT password and should **not** bypass CAPTCHA/2FA.
+Run settings: give this run a **timeout ≥ `liveViewMinutes`·60 + 120s** and
+**≥ 4096 MB** memory (headful Chromium + VNC).
 
-For the first version, you need a saved Playwright `storageState` session. The included helper captures cookies after you log in manually:
+Your password is never read or stored by the actor.
 
-```bash
-npm install
-npx playwright install chromium
-npm run capture-session
-```
+---
 
-That creates `sixt-session.json`. Paste that JSON into the Apify input field `loginSession`, or store it in Apify Key-Value Store as `SIXT_SESSION`.
+## Mode 2 — `scan`
 
-If you do not want to use your Mac even once for session capture, ask Claude/v0 to add a separate Apify “session capture” mode using Apify browser/live view. The current zip from Claude still assumes local session capture.
+Session resolution order:
+1. `loginSession` from input, if provided.
+2. Otherwise the saved `SIXT_SESSION` from the Key-Value Store.
+3. If neither exists → the run fails with: **“Run mode save-session first.”**
 
-## Correct Apify folder structure
+Then it runs the sweep (pickup dates × pickup times × rental lengths), writes
+each batch to the **dataset**, and **POSTs** to `ingestUrl` with header
+**`x-scanner-secret`** (the secret is also mirrored in the JSON body). POSTs
+retry up to 3× with backoff.
 
-This fixed zip uses the required folder structure:
-
-```text
-src/main.js
-src/lib/extract.js
-src/lib/sheets.js
-tools/capture-session.js
-.actor/actor.json
-.actor/input_schema.json
-Dockerfile
-package.json
-```
-
-## v0 connection
-
-In the Apify input, set:
-
+Example input:
 ```json
 {
-  "ingestUrl": "https://YOUR-V0-APP.vercel.app/api/ingest-deals",
-  "scannerSecret": "YOUR_SECRET"
+  "mode": "scan",
+  "pickupLocation": "LAX",
+  "dropoffLocation": "LAX",
+  "preferredMakes": ["BMW", "Mercedes", "Range Rover", "Audi"],
+  "vehicleClasses": ["Premium SUV", "Luxury SUV", "Executive SUV"],
+  "minDays": 5,
+  "maxDays": 27,
+  "pickupTimes": ["10:00"],
+  "dateWindowStart": "2026-07-01",
+  "dateWindowEnd": "2026-07-31",
+  "ingestUrl": "https://MY-V0-APP.com/api/ingest-deals",
+  "scannerSecret": "MY_SECRET",
+  "testRunOnly": true
 }
 ```
 
-Your v0 app must have this endpoint:
+> The full July × 5–27-day sweep is large, so `testRunOnly` defaults to **true**
+> (one search, then stop). Set it to `false` and tune `dateStepDays` / `dayStep`
+> / `maxSearches` for the full run.
 
-```text
-POST /api/ingest-deals
-Header: x-scanner-secret: YOUR_SECRET
-Body: { "deals": [...] }
-```
+### Reliable headless searches
+For cloud reliability, prefer a **`searchUrlTemplate`** (a SIXT results URL with
+the tokens `{pickup} {dropoff} {pickupDate} {dropoffDate} {pickupTime}
+{dropoffTime}`; dates `YYYY-MM-DD`, times `HH:mm`). A residential proxy is
+recommended either way.
 
-The actor maps its output to the v0 deal fields:
+---
 
-```text
-pickup_location
-dropoff_location
-vehicle_class
-vehicle_examples
-pickup_at
-dropoff_at
-days
-rate_type
-price_per_day
-total_price
-currency
-booking_url
-deal_score
-raw
-```
+## Output fields
 
-## First run settings
+`pickup_location, dropoff_location, vehicle_class, vehicle_examples, make,
+pickup_at, dropoff_at, days, rate_type, price_per_day, total_price, currency,
+booking_url, raw_text, scanned_at, source`
 
-Keep these defaults first:
+(written to the Apify dataset and posted to `ingestUrl`).
 
-```text
-testRunOnly: true
-pickupCode: LAX
-dropoffCode: LAX
-minDays: 5
-maxDays: 27
-pickupTime: 10:00
-dropoffTime: 10:00
-```
+---
 
-After it works, change:
+## Files
 
-```text
-testRunOnly: false
-```
+| File                     | Purpose                                         |
+| ------------------------ | ----------------------------------------------- |
+| `src/main.js`            | Dispatches by `mode`                            |
+| `src/save_session.js`    | Interactive in-cloud login (Xvfb + x11vnc + noVNC) |
+| `src/scan.js`            | Scan: search, dataset, ingest POST              |
+| `src/lib/session.js`     | Defaults + session load (input → KV → error)    |
+| `src/lib/extract.js`     | Card scraping + field/make parsing              |
+| `src/lib/ingest.js`      | Batched POST with `x-scanner-secret`            |
+| `tools/capture-session.js` | Optional legacy local capture (no longer required) |
+| `.actor/*`, `Dockerfile` | Actor config + build (adds VNC packages)        |
 
-## Strong recommendation
-
-Use a `searchUrlTemplate` if possible. Do one normal SIXT search in your browser, copy the results URL, and replace the changing parts with:
-
-```text
-{pickup}
-{dropoff}
-{pickupDate}
-{dropoffDate}
-{pickupTime}
-{dropoffTime}
-```
-
-Without that, form filling is best-effort and may need tuning.
-
-## Safety rules
-
-- No password storage.
-- No CAPTCHA bypass.
-- No auto-booking.
-- If the actor lands on checkout/payment, it stops.
-- Scan slowly.
+## Notes
+- Sessions expire — re-run `save-session` when `scan` comes back logged-out
+  (it will report a challenge / no results).
+- Keep volume modest and within SIXT's terms; this is for your own corporate
+  rates. The delays support that.
+- Parsing is heuristic (regex over visible card text), tuned for the US site and
+  `$`/USD. If extraction misses cards, open the `no-results-*` HTML in the
+  Key-Value Store and add the real card selector to the top of `CARD_SELECTORS`
+  in `src/lib/extract.js`.

@@ -1,0 +1,128 @@
+{
+  "title": "SIXT Deal Scanner input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "mode": {
+      "title": "Mode",
+      "type": "string",
+      "description": "save-session: open SIXT for interactive manual login via Live View, then store cookies. scan: load the saved session and scan rates.",
+      "editor": "select",
+      "enum": ["scan", "save-session"],
+      "enumTitles": ["scan", "save-session"],
+      "default": "scan"
+    },
+
+    "liveViewMinutes": {
+      "title": "Live View login window (minutes)",
+      "type": "integer",
+      "description": "save-session only. How long the browser stays open for you to log in before the session is saved.",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 60
+    },
+    "liveViewPassword": {
+      "title": "Live View password (optional)",
+      "type": "string",
+      "description": "save-session only. If set, noVNC requires this password before showing the browser. Recommended for privacy.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "liveViewWidth": {
+      "title": "Live View width",
+      "type": "integer",
+      "default": 1440,
+      "minimum": 800
+    },
+    "liveViewHeight": {
+      "title": "Live View height",
+      "type": "integer",
+      "default": 900,
+      "minimum": 600
+    },
+
+    "loginSession": {
+      "title": "SIXT login session (Playwright storageState)",
+      "type": "object",
+      "description": "scan only. Optional. If provided, this is used instead of the saved SIXT_SESSION. Normally leave empty and rely on save-session.",
+      "editor": "json"
+    },
+
+    "pickupLocation": {
+      "title": "Pickup location",
+      "type": "string",
+      "editor": "textfield",
+      "default": "LAX"
+    },
+    "dropoffLocation": {
+      "title": "Dropoff location",
+      "type": "string",
+      "editor": "textfield",
+      "default": "LAX"
+    },
+    "preferredMakes": {
+      "title": "Preferred makes",
+      "type": "array",
+      "editor": "stringList",
+      "default": ["BMW", "Mercedes", "Range Rover", "Audi"]
+    },
+    "vehicleClasses": {
+      "title": "Vehicle classes to keep",
+      "type": "array",
+      "editor": "stringList",
+      "default": ["Premium SUV", "Luxury SUV", "Executive SUV"]
+    },
+    "minDays": { "title": "Minimum rental length (days)", "type": "integer", "default": 5, "minimum": 1 },
+    "maxDays": { "title": "Maximum rental length (days)", "type": "integer", "default": 27, "minimum": 1 },
+    "pickupTimes": {
+      "title": "Pickup/return times (24h HH:mm)",
+      "type": "array",
+      "editor": "stringList",
+      "default": ["10:00"]
+    },
+    "dateWindowStart": { "title": "Pickup date window start (YYYY-MM-DD)", "type": "string", "editor": "textfield", "default": "2026-07-01" },
+    "dateWindowEnd": { "title": "Pickup date window end (YYYY-MM-DD)", "type": "string", "editor": "textfield", "default": "2026-07-31" },
+
+    "ingestUrl": {
+      "title": "v0 ingest endpoint URL",
+      "type": "string",
+      "description": "scan only. Results are POSTed here with header x-scanner-secret. Leave empty to use only the dataset.",
+      "editor": "textfield"
+    },
+    "scannerSecret": {
+      "title": "Scanner secret",
+      "type": "string",
+      "description": "Sent as the x-scanner-secret header (and in the body) to the ingest endpoint.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+
+    "sixtBaseUrl": { "title": "SIXT base URL", "type": "string", "editor": "textfield", "default": "https://www.sixt.com/" },
+    "searchUrlTemplate": {
+      "title": "Search results URL template (recommended for cloud)",
+      "type": "string",
+      "description": "SIXT results URL with tokens: {pickup} {dropoff} {pickupDate} {dropoffDate} {pickupTime} {dropoffTime}.",
+      "editor": "textfield"
+    },
+    "dateStepDays": { "title": "Step between pickup dates (days)", "type": "integer", "default": 7, "minimum": 1 },
+    "dayStep": { "title": "Step between rental lengths (days)", "type": "integer", "default": 1, "minimum": 1 },
+    "testRunOnly": {
+      "title": "Test run only (one search first)",
+      "type": "boolean",
+      "description": "scan only. When true, runs ONLY the first combination and stops.",
+      "default": true
+    },
+    "maxSearches": { "title": "Safety cap on number of searches", "type": "integer", "default": 50, "minimum": 1 },
+    "minDelayMs": { "title": "Minimum delay between searches (ms)", "type": "integer", "default": 8000, "minimum": 0 },
+    "maxDelayMs": { "title": "Maximum delay between searches (ms)", "type": "integer", "default": 20000, "minimum": 0 },
+    "postBatchSize": { "title": "Ingest POST batch size", "type": "integer", "default": 200, "minimum": 1 },
+    "proxyConfiguration": {
+      "title": "Proxy",
+      "type": "object",
+      "description": "scan only. Residential proxy recommended to reduce bot challenges. Never bypasses CAPTCHA.",
+      "editor": "proxy",
+      "default": { "useApifyProxy": true }
+    }
+  },
+  "required": []
+}

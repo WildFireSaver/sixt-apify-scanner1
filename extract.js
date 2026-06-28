@@ -1,6 +1,6 @@
 /**
- * Defensive extraction: SIXT is a dynamic app whose markup changes, so we find
- * result cards via candidate selectors, pull their visible text + links, and
+ * Defensive extraction. SIXT is a dynamic app whose markup changes, so we find
+ * result cards via candidate selectors, pull their visible text + links, then
  * parse fields heuristically. Tune CARD_SELECTORS / parsing if the site shifts.
  */
 
@@ -37,19 +37,9 @@ export async function extractRawCards(page, selectors = CARD_SELECTORS) {
 }
 
 const RATE_KEYWORDS = [
-  'pay now',
-  'pay at desk',
-  'pay at counter',
-  'pay at pick-up',
-  'pay at pickup',
-  'free cancellation',
-  'flexible rate',
-  'flex rate',
-  'limited rate',
-  'prepay',
-  'prepaid',
-  'corporate rate',
-  'best price',
+  'pay now', 'pay at desk', 'pay at counter', 'pay at pick-up', 'pay at pickup',
+  'free cancellation', 'flexible rate', 'flex rate', 'limited rate',
+  'prepay', 'prepaid', 'corporate rate', 'best price',
 ];
 
 const CATEGORY_WORDS = [
@@ -59,10 +49,10 @@ const CATEGORY_WORDS = [
 ];
 
 const MAKES = [
-  'BMW', 'Mercedes', 'Audi', 'Volkswagen', 'Toyota', 'Ford', 'Jeep',
-  'Nissan', 'Kia', 'Hyundai', 'Volvo', 'Tesla', 'Mazda', 'Range Rover',
-  'Land Rover', 'Cadillac', 'Chevrolet', 'GMC', 'MINI', 'Cupra', 'Skoda',
-  'Peugeot', 'Renault', 'Porsche', 'Genesis', 'Lexus',
+  'Range Rover', 'Land Rover', 'Mercedes-Benz', 'Mercedes', 'BMW', 'Audi',
+  'Volkswagen', 'Toyota', 'Ford', 'Jeep', 'Nissan', 'Kia', 'Hyundai', 'Volvo',
+  'Tesla', 'Mazda', 'Cadillac', 'Chevrolet', 'GMC', 'MINI', 'Cupra', 'Skoda',
+  'Peugeot', 'Renault', 'Porsche', 'Genesis', 'Lexus', 'Lincoln', 'Acura',
 ];
 
 function escapeRe(s) {
@@ -94,8 +84,8 @@ function findLabeledAmount(text, amounts, labelRegexes, maxDistance = 60) {
   return null;
 }
 
-function guessCategory(lines, requestedCategories) {
-  for (const want of requestedCategories || []) {
+function guessClass(lines, requestedClasses) {
+  for (const want of requestedClasses || []) {
     const hit = lines.find((l) => new RegExp(escapeRe(want), 'i').test(l));
     if (hit) return hit.trim();
   }
@@ -105,9 +95,24 @@ function guessCategory(lines, requestedCategories) {
   return hit ? hit.trim() : null;
 }
 
-function guessModel(lines) {
-  const hit = lines.find((l) => MAKES.some((m) => new RegExp(`\\b${escapeRe(m)}\\b`, 'i').test(l)));
-  return hit ? hit.trim() : null;
+// Detect make, preferring the user's preferredMakes order, then the general list.
+function guessMake(text, preferredMakes) {
+  const ordered = [...(preferredMakes || []), ...MAKES];
+  for (const mk of ordered) {
+    if (new RegExp(`\\b${escapeRe(mk)}\\b`, 'i').test(text)) return mk;
+  }
+  return null;
+}
+
+function collectExamples(lines, preferredMakes) {
+  const makeList = [...(preferredMakes || []), ...MAKES];
+  const hits = lines.filter(
+    (l) =>
+      /or similar/i.test(l) ||
+      makeList.some((m) => new RegExp(`\\b${escapeRe(m)}\\b`, 'i').test(l))
+  );
+  const cleaned = hits.map((l) => l.replace(/\s*or similar.*/i, '').trim()).filter(Boolean);
+  return [...new Set(cleaned)].slice(0, 4);
 }
 
 function pickBookingLink(links) {
@@ -118,7 +123,7 @@ function pickBookingLink(links) {
 
 /**
  * @param {Array<{text:string, links:string[]}>} rawCards
- * @param {{categories:string[], rentalDays:number}} ctx
+ * @param {{vehicleClasses:string[], preferredMakes:string[], rentalDays:number}} ctx
  */
 export function parseCards(rawCards, ctx) {
   const out = [];
@@ -138,30 +143,30 @@ export function parseCards(rawCards, ctx) {
 
     const currency = normalizeCurrency(amounts[0].symbol);
 
-    let dailyPrice = findLabeledAmount(text, amounts, [/\/\s*day/i, /per day/i, /a day/i]);
+    let pricePerDay = findLabeledAmount(text, amounts, [/\/\s*day/i, /per day/i, /a day/i]);
     let totalPrice = findLabeledAmount(text, amounts, [/total/i, /est\.?\s*total/i]);
 
     const nums = amounts.map((a) => a.num);
     if (totalPrice == null) totalPrice = Math.max(...nums);
-    if (dailyPrice == null && totalPrice != null && ctx.rentalDays) {
-      dailyPrice = Math.round((totalPrice / ctx.rentalDays) * 100) / 100;
+    if (pricePerDay == null && totalPrice != null && ctx.rentalDays) {
+      pricePerDay = Math.round((totalPrice / ctx.rentalDays) * 100) / 100;
     }
 
-    const category = guessCategory(lines, ctx.categories);
-
-    let example = lines.find((l) => /or similar/i.test(l)) || guessModel(lines);
-    if (example) example = example.replace(/\s*or similar.*/i, '').trim();
+    const vehicleClass = guessClass(lines, ctx.vehicleClasses);
+    const vehicleExamples = collectExamples(lines, ctx.preferredMakes);
+    const make = guessMake(text, ctx.preferredMakes);
 
     const lower = text.toLowerCase();
     const rateMatches = [...new Set(RATE_KEYWORDS.filter((k) => lower.includes(k)))];
     const rateType = rateMatches.length ? rateMatches.join(', ') : null;
 
     out.push({
-      vehicle_category: category,
-      example_vehicle: example || null,
+      vehicle_class: vehicleClass,
+      vehicle_examples: vehicleExamples,
+      make,
       rate_type: rateType,
+      price_per_day: pricePerDay ?? null,
       total_price: totalPrice ?? null,
-      daily_price: dailyPrice ?? null,
       currency,
       booking_url: pickBookingLink(card.links),
       raw_text: text.slice(0, 2000),
@@ -171,8 +176,7 @@ export function parseCards(rawCards, ctx) {
   return out;
 }
 
-/** True if the category text matches any requested category (case-insensitive). */
-export function categoryMatches(categoryText, requested) {
-  if (!categoryText) return false;
-  return (requested || []).some((w) => new RegExp(escapeRe(w), 'i').test(categoryText));
+export function classMatches(classText, requested) {
+  if (!classText) return false;
+  return (requested || []).some((w) => new RegExp(escapeRe(w), 'i').test(classText));
 }

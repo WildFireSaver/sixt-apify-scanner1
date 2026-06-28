@@ -1,0 +1,37 @@
+{
+  "actorSpecification": 1,
+  "name": "sixt-deal-scanner",
+  "title": "SIXT Deal Scanner (private)",
+  "description": "Two modes: save-session (interactive in-cloud login via Live View) and scan (read corporate rates, save to dataset, POST to v0 ingest). No password, no CAPTCHA/2FA bypass, no auto-booking.",
+  "version": "0.2",
+  "buildTag": "latest",
+  "input": "./input_schema.json",
+  "dockerfile": "./Dockerfile",
+  "storages": {
+    "dataset": {
+      "actorSpecification": 1,
+      "title": "SIXT offers",
+      "views": {
+        "overview": {
+          "title": "Overview",
+          "transformation": {
+            "fields": [
+              "pickup_location",
+              "dropoff_location",
+              "vehicle_class",
+              "make",
+              "vehicle_examples",
+              "days",
+              "rate_type",
+              "price_per_day",
+              "total_price",
+              "currency",
+              "booking_url"
+            ]
+          },
+          "display": { "component": "table" }
+        }
+      }
+    }
+  }
+}

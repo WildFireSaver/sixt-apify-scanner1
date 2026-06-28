@@ -3,16 +3,15 @@ import readline from 'node:readline';
 import { chromium } from 'playwright';
 
 /**
- * LOCAL helper — run this on your Mac, not on Apify.
+ * ONE-TIME local helper to mint a session. Run anywhere with a real browser
+ * (your Mac is fine) — the Actor itself runs entirely in Apify cloud.
  *
  *   npm run capture-session
  *
- * Opens a real Chromium window on SIXT. You log into your corporate account
- * BY HAND (including any 2FA / CAPTCHA). Press Enter and it writes your session
- * (cookies only) to ./sixt-session.json. Paste that JSON into the actor's
- * `loginSession` input, or upload it to the key-value store key SIXT_SESSION.
- *
- * Your password is never typed or stored.
+ * Log into your SIXT corporate account BY HAND (incl. 2FA/CAPTCHA), press Enter,
+ * and it writes ./sixt-session.json (cookies only). Put that JSON into the
+ * Actor's loginSession input, or upload it to the key-value store key
+ * SIXT_SESSION. Your password is never typed or stored.
  */
 
 const BASE_URL = process.env.SIXT_BASE_URL || 'https://www.sixt.com/';
@@ -50,7 +49,7 @@ await waitForEnter('When fully logged in, press Enter to export the session... '
 const state = await context.storageState();
 fs.writeFileSync(OUT, JSON.stringify(state, null, 2));
 console.log(`\nSession written to ${OUT}`);
-console.log('Paste its contents into the actor input "loginSession" (or KV key SIXT_SESSION).\n');
+console.log('Provide it via the Actor input "loginSession" or KV key SIXT_SESSION.\n');
 
 await browser.close();
 process.exit(0);
