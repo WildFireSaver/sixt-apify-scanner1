@@ -8,11 +8,16 @@
       "type": "string",
       "description": "save-session: open SIXT for interactive manual login via Live View, then store cookies. scan: load the saved session and scan rates.",
       "editor": "select",
-      "enum": ["scan", "save-session"],
-      "enumTitles": ["scan", "save-session"],
+      "enum": [
+        "scan",
+        "save-session"
+      ],
+      "enumTitles": [
+        "scan",
+        "save-session"
+      ],
       "default": "scan"
     },
-
     "liveViewMinutes": {
       "title": "Live View login window (minutes)",
       "type": "integer",
@@ -32,57 +37,96 @@
       "title": "Live View width",
       "type": "integer",
       "default": 1440,
-      "minimum": 800
+      "minimum": 800,
+      "description": "Browser Live View width in pixels for manual SIXT login."
     },
     "liveViewHeight": {
       "title": "Live View height",
       "type": "integer",
       "default": 900,
-      "minimum": 600
+      "minimum": 600,
+      "description": "Browser Live View height in pixels for manual SIXT login."
     },
-
     "loginSession": {
       "title": "SIXT login session (Playwright storageState)",
       "type": "object",
       "description": "scan only. Optional. If provided, this is used instead of the saved SIXT_SESSION. Normally leave empty and rely on save-session.",
       "editor": "json"
     },
-
     "pickupLocation": {
       "title": "Pickup location",
       "type": "string",
       "editor": "textfield",
-      "default": "LAX"
+      "default": "LAX",
+      "description": "SIXT pickup location code or text, for example LAX."
     },
     "dropoffLocation": {
       "title": "Dropoff location",
       "type": "string",
       "editor": "textfield",
-      "default": "LAX"
+      "default": "LAX",
+      "description": "SIXT dropoff location code or text, for example LAX."
     },
     "preferredMakes": {
       "title": "Preferred makes",
       "type": "array",
       "editor": "stringList",
-      "default": ["BMW", "Mercedes", "Range Rover", "Audi"]
+      "default": [
+        "BMW",
+        "Mercedes",
+        "Range Rover",
+        "Audi"
+      ],
+      "description": "Vehicle makes to prioritize when reading visible offer text."
     },
     "vehicleClasses": {
       "title": "Vehicle classes to keep",
       "type": "array",
       "editor": "stringList",
-      "default": ["Premium SUV", "Luxury SUV", "Executive SUV"]
+      "default": [
+        "Premium SUV",
+        "Luxury SUV",
+        "Executive SUV"
+      ],
+      "description": "Rental vehicle classes/categories to keep in results."
     },
-    "minDays": { "title": "Minimum rental length (days)", "type": "integer", "default": 5, "minimum": 1 },
-    "maxDays": { "title": "Maximum rental length (days)", "type": "integer", "default": 27, "minimum": 1 },
+    "minDays": {
+      "title": "Minimum rental length (days)",
+      "type": "integer",
+      "default": 5,
+      "minimum": 1,
+      "description": "Minimum rental length in days for generated searches."
+    },
+    "maxDays": {
+      "title": "Maximum rental length (days)",
+      "type": "integer",
+      "default": 27,
+      "minimum": 1,
+      "description": "Maximum rental length in days for generated searches. Keep under 28 for normal rentals."
+    },
     "pickupTimes": {
       "title": "Pickup/return times (24h HH:mm)",
       "type": "array",
       "editor": "stringList",
-      "default": ["10:00"]
+      "default": [
+        "10:00"
+      ],
+      "description": "Pickup and return time slots in 24-hour HH:mm format."
     },
-    "dateWindowStart": { "title": "Pickup date window start (YYYY-MM-DD)", "type": "string", "editor": "textfield", "default": "2026-07-01" },
-    "dateWindowEnd": { "title": "Pickup date window end (YYYY-MM-DD)", "type": "string", "editor": "textfield", "default": "2026-07-31" },
-
+    "dateWindowStart": {
+      "title": "Pickup date window start (YYYY-MM-DD)",
+      "type": "string",
+      "editor": "textfield",
+      "default": "2026-07-01",
+      "description": "First pickup date to scan in YYYY-MM-DD format."
+    },
+    "dateWindowEnd": {
+      "title": "Pickup date window end (YYYY-MM-DD)",
+      "type": "string",
+      "editor": "textfield",
+      "default": "2026-07-31",
+      "description": "Last pickup date to scan in YYYY-MM-DD format."
+    },
     "ingestUrl": {
       "title": "v0 ingest endpoint URL",
       "type": "string",
@@ -96,32 +140,75 @@
       "editor": "textfield",
       "isSecret": true
     },
-
-    "sixtBaseUrl": { "title": "SIXT base URL", "type": "string", "editor": "textfield", "default": "https://www.sixt.com/" },
+    "sixtBaseUrl": {
+      "title": "SIXT base URL",
+      "type": "string",
+      "editor": "textfield",
+      "default": "https://www.sixt.com/",
+      "description": "Base SIXT website URL to open for login or scanning."
+    },
     "searchUrlTemplate": {
       "title": "Search results URL template (recommended for cloud)",
       "type": "string",
       "description": "SIXT results URL with tokens: {pickup} {dropoff} {pickupDate} {dropoffDate} {pickupTime} {dropoffTime}.",
       "editor": "textfield"
     },
-    "dateStepDays": { "title": "Step between pickup dates (days)", "type": "integer", "default": 7, "minimum": 1 },
-    "dayStep": { "title": "Step between rental lengths (days)", "type": "integer", "default": 1, "minimum": 1 },
+    "dateStepDays": {
+      "title": "Step between pickup dates (days)",
+      "type": "integer",
+      "default": 7,
+      "minimum": 1,
+      "description": "How many days to skip between pickup dates while scanning."
+    },
+    "dayStep": {
+      "title": "Step between rental lengths (days)",
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "description": "How many days to step between rental lengths."
+    },
     "testRunOnly": {
       "title": "Test run only (one search first)",
       "type": "boolean",
       "description": "scan only. When true, runs ONLY the first combination and stops.",
       "default": true
     },
-    "maxSearches": { "title": "Safety cap on number of searches", "type": "integer", "default": 50, "minimum": 1 },
-    "minDelayMs": { "title": "Minimum delay between searches (ms)", "type": "integer", "default": 8000, "minimum": 0 },
-    "maxDelayMs": { "title": "Maximum delay between searches (ms)", "type": "integer", "default": 20000, "minimum": 0 },
-    "postBatchSize": { "title": "Ingest POST batch size", "type": "integer", "default": 200, "minimum": 1 },
+    "maxSearches": {
+      "title": "Safety cap on number of searches",
+      "type": "integer",
+      "default": 50,
+      "minimum": 1,
+      "description": "Safety limit for maximum search combinations in one run."
+    },
+    "minDelayMs": {
+      "title": "Minimum delay between searches (ms)",
+      "type": "integer",
+      "default": 8000,
+      "minimum": 0,
+      "description": "Minimum delay between searches in milliseconds."
+    },
+    "maxDelayMs": {
+      "title": "Maximum delay between searches (ms)",
+      "type": "integer",
+      "default": 20000,
+      "minimum": 0,
+      "description": "Maximum delay between searches in milliseconds."
+    },
+    "postBatchSize": {
+      "title": "Ingest POST batch size",
+      "type": "integer",
+      "default": 200,
+      "minimum": 1,
+      "description": "How many deals to send per POST request to the v0 ingest endpoint."
+    },
     "proxyConfiguration": {
       "title": "Proxy",
       "type": "object",
       "description": "scan only. Residential proxy recommended to reduce bot challenges. Never bypasses CAPTCHA.",
       "editor": "proxy",
-      "default": { "useApifyProxy": true }
+      "default": {
+        "useApifyProxy": true
+      }
     }
   },
   "required": []
