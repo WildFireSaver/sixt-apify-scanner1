@@ -1,0 +1,12 @@
+This is the FLAT version for your current GitHub repo.
+Upload/replace these root files in GitHub:
+- main.js
+- extract.js
+- sheets.js
+- capture-session.js
+- package.json
+- Dockerfile
+- README.md
+
+This version runs with: npm start -> node main.js
+It does NOT require src/main.js.

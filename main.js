@@ -1,6 +1,6 @@
 import { Actor, log } from 'apify';
-import { CARD_SELECTORS, extractRawCards, parseCards, categoryMatches } from './lib/extract.js';
-import { appendToSheet } from './lib/sheets.js';
+import { CARD_SELECTORS, extractRawCards, parseCards, categoryMatches } from './extract.js';
+import { appendToSheet } from './sheets.js';
 
 await Actor.init();
 
